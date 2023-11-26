@@ -26,8 +26,11 @@ logging.info(f'I\'m client: {hostip} listening on: {sport}')
 #recieve messages from the server
 def sock_listen():
     while True:
-        data = sock_server.recv(1024).decode()
-        print(f'\rpeer {serverip}: {data} \n>')
+        try:
+            data = sock_server.recv(1024).decode(encoding='utf-8', errors='strict')
+        except UnicodeDecodeError:
+            logging.warning(f'Decode error from incoming message from server')
+        logging.info(f'\rlist recieved from {serverip}: {data} \n>')
 
 sock_server_listener = threading.Thread(target=sock_listen, daemon=True)
 sock_server_listener.start()
