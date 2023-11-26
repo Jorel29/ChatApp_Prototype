@@ -33,6 +33,6 @@ def listen():
         logging.info(f'\rIncoming signal from client {clientip}(source) to {serverip}(dest)')
         clients.append(clientip)
 
-#create a listening thread
+# create a listening thread
 listener = threading.Thread(target=listen, daemon=True)
 listener.start()
