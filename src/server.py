@@ -22,15 +22,16 @@ logging.info(f'I\'m a signaling server')
 #note: input is not fully sanitized
 #waits for <clientip>:<serverip> message format
 def listen():
-    try:
-        data = sock.recv(1024).decode(encoding='utf-8', errors='strict')
-    except:
-        logging.warning(f'Decode error from incoming message from a client')
-        return
-    
-    clientip, serverip = data.split(':')
-    logging.info(f'\rIncoming signal from client {clientip}(source) to {serverip}(dest)')
-    clients.append(clientip)
+    while True:
+        try:
+            data = sock.recv(1024).decode(encoding='utf-8', errors='strict')
+        except:
+            logging.warning(f'Decode error from incoming message from a client')
+            continue
+        
+        clientip, serverip = data.split(':')
+        logging.info(f'\rIncoming signal from client {clientip}(source) to {serverip}(dest)')
+        clients.append(clientip)
 
 #create a listening thread
 listener = threading.Thread(target=listen, daemon=True)
