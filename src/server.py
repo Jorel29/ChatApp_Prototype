@@ -41,7 +41,9 @@ def listen():
         clients.append(clientip)
 
         logging.info(f'Sending response to {clientip}')
-        sock.sendto(b'test', (clientip, 8080))
+        clientlist = ':'.join(clients)
+        msg = f'{clientlist}'
+        sock.sendto(bytes(msg, encoding='utf-8'), (clientip, 8080))
 
 # create a listening thread
 listener = threading.Thread(target=listen, daemon=True)
