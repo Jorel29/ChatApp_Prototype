@@ -36,14 +36,20 @@ def listen():
             logging.warning(f'Decode error from incoming message from a client')
             continue
         
-        clientip, serverip = data.split(':')
+        #Very basic sanitizing, do not actually do this
+        try:
+            clientip, serverip = data.split(':')
+        except:
+            logging.warning('Malformed message from client')
+            continue
+
         logging.info(f'Incoming signal from client {clientip}(source) to {serverip}(dest)')
         clients.append(clientip)
-
         logging.info(f'Sending response to {clientip}')
         clientlist = ':'.join(clients)
         msg = f'{clientlist}'
         sock.sendto(bytes(msg, encoding='utf-8'), (clientip, 8080))
+        
 
 # create a listening thread
 listener = threading.Thread(target=listen, daemon=True)
