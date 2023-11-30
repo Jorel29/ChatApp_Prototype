@@ -3,10 +3,14 @@ import socket
 import logging
 
 logging.basicConfig(
-    filename='server_test_log.log', 
+    #filename='server_log.log', 
     level=logging.DEBUG,
     format='[%(lineno)d] %(asctime)s.%(msecs)03d %(message)s',
     datefmt='%Y-%m-%d:%H:%M:%S',
+    handlers=[
+        logging.FileHandler(filename='./tests/logs/server_test_log.log'),
+        logging.StreamHandler()
+    ]
     )
 #Socket setup
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
