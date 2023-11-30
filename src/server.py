@@ -18,7 +18,7 @@ hostname = socket.gethostname()
 hostip = '127.0.0.1'
 logging.debug(f'hostname: {hostname}, hostip: {hostip}')
 sport = 8082
-dport = 8080
+dport = 8083
 
 clients = []
 
@@ -35,7 +35,8 @@ def listen():
     while True:
         try:
             logging.info('Waiting for clients...')
-            data = sock.recv(1024).decode(encoding='utf-8', errors='strict')
+            rawdata, retaddr = sock.recvfrom(1024)
+            data = rawdata.decode(encoding='utf-8', errors='strict')
         except:
             logging.warning(f'Decode error from incoming message from a client')
             continue
@@ -46,20 +47,25 @@ def listen():
         except:
             logging.warning('Malformed message from client')
             continue
-        
+        logging.debug(f'Checking {serverip} != {hostip}')
         if serverip != hostip:
             logging.warning(f'{hostip} does not match dest: {serverip}')
+            continue
+        logging.debug(f'Checking {clientip} != {retaddr[0]}')
+        if clientip != retaddr[0]:
+            logging.warning(f'clientip ({clientip}) does not match retaddr ({retaddr})')
             continue
 
 
         logging.info(f'Incoming signal from client {clientip}(source) to {serverip}(dest)')
-        
+        logging.debug(f'clientlist: {clients} checking if {clientip} is in list...')
         if clientip not in clients:
+            logging.debug('Adding clientip to list..')
             clients.append(clientip)
-        logging.info(f'Sending response to {clientip}')
+        logging.info(f'Sending clientlist: {clients} response to {clientip}')
         clientlist = ':'.join(clients)
         msg = f'{clientlist}'
-        sock.sendto(bytes(msg, encoding='utf-8'), (clientip, 8080))
+        sock.sendto(bytes(msg, encoding='utf-8'), (clientip, dport))
         
 
 # create a listening thread

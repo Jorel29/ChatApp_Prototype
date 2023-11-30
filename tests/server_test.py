@@ -9,12 +9,12 @@ logging.basicConfig(
     datefmt='%Y-%m-%d:%H:%M:%S',
     handlers=[
         logging.FileHandler(filename='./tests/logs/server_test_log.log'),
-        logging.StreamHandler()
+        
     ]
     )
 #Socket setup
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-sock.bind(('127.0.0.1', 8080))
+sock.bind(('127.0.0.1', 8083))
 
 #Macros
 SERVER_ADDR = ('127.0.0.1', 8082)
@@ -33,7 +33,8 @@ class BasicServerFunctions(unittest.TestCase):
         logging.debug(f'Data recieved: {data}')
 
         self.assertIn(test_message_expected, data, msg= f'{data} not contained in expected {test_message_expected}')
- 
+    
+    #test tries to crash the server with malformed input
     def test_basicsignal_malformed(self):
         logging.debug(f'test_basicsignal_malformed')
         expected = '127.0.0.1'
@@ -49,10 +50,11 @@ class BasicServerFunctions(unittest.TestCase):
 
         self.assertIn(expected, data, msg= f'{data} not contained in expected {expected}')
 
+    #next two tests try to crash the server with malformed ips
     def test_basicsignal_badserverip(self):
-        logging.debug('test_basicsignal_badip')
+        logging.debug('test_basicsignal_badserverip')
         expected = '127.0.0.1'
-        message = b'127.0.0.2:10.0.0.1'
+        message = b'127.0.0.1:10.0.0.1'
 
         logging.debug('Sending improper ip message')
         sock.sendto(message, SERVER_ADDR)
@@ -66,6 +68,22 @@ class BasicServerFunctions(unittest.TestCase):
 
         self.assertIn(expected, data, msg= f'{data} not contained in expected {expected}')
 
+    def test_basicsignal_badclientip(self):
+        logging.debug('test_basicsignal_badip')
+        expected = '127.0.0.1'
+        message = b'127.0.0.2:127.0.0.1'
+
+        logging.debug('Sending improper ip message')
+        sock.sendto(message, SERVER_ADDR)
+        
+        logging.debug('Sending proper ip message')
+        sock.sendto(SERVER_MSG, SERVER_ADDR)
+        logging.debug('Message sent, Waiting for server...')
+        data = sock.recv(1024).decode(encoding='utf-8', errors='strict')
+
+        logging.debug(f'Data recieved: {data}')
+
+        self.assertIn(expected, data, msg= f'{data} not contained in expected {expected}')
 
 
 
