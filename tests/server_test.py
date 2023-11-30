@@ -30,7 +30,7 @@ class BasicServerFunctions(unittest.TestCase):
 
         self.assertIn(test_message_expected, data, msg= f'{data} not contained in expected {test_message_expected}')
  
-    def 
+    
         
 
 if __name__ == '__main__':
