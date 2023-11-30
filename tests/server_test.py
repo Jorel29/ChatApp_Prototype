@@ -35,7 +35,7 @@ class BasicServerFunctions(unittest.TestCase):
         expected = '127.0.0.1'
         #Send a malformed message, then a correct one
         sock.sendto(b'Hello Server!', SERVER_ADDR)
-        logging.debug('Waiting for server...')
+        logging.debug('Sending correctly formed message...')
 
         sock.sendto(SERVER_MSG, SERVER_ADDR)
         logging.debug('Message sent, Waiting for server...')
@@ -45,7 +45,25 @@ class BasicServerFunctions(unittest.TestCase):
 
         self.assertIn(expected, data, msg= f'{data} not contained in expected {expected}')
 
+    def test_basicsignal_badserverip(self):
+        logging.debug('test_basicsignal_badip')
+        expected = '127.0.0.1'
+        message = b'127.0.0.2:10.0.0.1'
+
+        logging.debug('Sending improper ip message')
+        sock.sendto(message, SERVER_ADDR)
         
+        logging.debug('Sending proper ip message')
+        sock.sendto(SERVER_MSG, SERVER_ADDR)
+        logging.debug('Message sent, Waiting for server...')
+        data = sock.recv(1024).decode(encoding='utf-8', errors='strict')
+
+        logging.debug(f'Data recieved: {data}')
+
+        self.assertIn(expected, data, msg= f'{data} not contained in expected {expected}')
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

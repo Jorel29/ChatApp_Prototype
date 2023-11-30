@@ -36,15 +36,22 @@ def listen():
             logging.warning(f'Decode error from incoming message from a client')
             continue
         
-        #Very basic sanitizing, do not actually do this
+        #Very basic sanitizing 
         try:
             clientip, serverip = data.split(':')
         except:
             logging.warning('Malformed message from client')
             continue
+        
+        if serverip != hostip:
+            logging.warning(f'{hostip} does not match dest: {serverip}')
+            continue
+
 
         logging.info(f'Incoming signal from client {clientip}(source) to {serverip}(dest)')
-        clients.append(clientip)
+        
+        if clientip not in clients:
+            clients.append(clientip)
         logging.info(f'Sending response to {clientip}')
         clientlist = ':'.join(clients)
         msg = f'{clientlist}'
