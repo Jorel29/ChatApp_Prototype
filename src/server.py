@@ -8,8 +8,8 @@ logging.basicConfig(filename='server_log.log', level=logging.DEBUG)
 hostname = socket.gethostname()
 hostip = 'localhost'
 logging.debug(f'hostname: {hostname}, hostip: {hostip}')
-sport = 8080
-dport = 8082
+sport = 8082
+dport = 8080
 
 clients = []
 
