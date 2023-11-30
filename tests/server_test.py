@@ -5,8 +5,8 @@ import logging
 logging.basicConfig(
     filename='server_test_log.log', 
     level=logging.DEBUG,
-    format='[%(lineno)d] %(asctime)s %(message)s',
-    datefmt='%Y-%m-%d:%H:%M:%SSSS',
+    format='[%(lineno)d] %(asctime)s.%(msecs)03d %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
     )
 #Socket setup
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -38,7 +38,7 @@ class BasicServerFunctions(unittest.TestCase):
         logging.debug('Waiting for server...')
 
         sock.sendto(SERVER_MSG, SERVER_ADDR)
-        logging.debug(f'Waiting for server...')
+        logging.debug('Message sent, Waiting for server...')
         data = sock.recv(1024).decode(encoding='utf-8', errors='strict')
 
         logging.debug(f'Data recieved: {data}')

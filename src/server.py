@@ -5,7 +5,7 @@ import logging
 logging.basicConfig(
     filename='server_log.log', 
     level=logging.DEBUG,
-    format='[%(lineno)d] %(asctime)s %(message)s',
+    format='[%(lineno)d] %(asctime)s.%(msecs)03d %(message)s',
     datefmt='%Y-%m-%d:%H:%M:%S',
     )
 
