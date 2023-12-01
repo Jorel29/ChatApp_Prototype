@@ -43,22 +43,7 @@ def listen():
         #store client addr
         logging.info(f'Recieved ping from {retaddr}')
         client = str(retaddr[0]) + ':' + str(retaddr[1])
-        #Very basic sanitizing 
-        # try:
-        #     clientip, serverip = data.split(':')
-        # except:
-        #     logging.warning('Malformed message from client')
-        #     continue
-        # logging.debug(f'Checking {serverip} != {hostip}')
-        # if serverip != hostip:
-        #     logging.warning(f'{hostip} does not match dest: {serverip}')
-        #     continue
-        # logging.debug(f'Checking {clientip} != {retaddr[0]}')
-        # if clientip != retaddr[0]:
-        #     logging.warning(f'clientip ({clientip}) does not match retaddr ({retaddr})')
-        #     continue
-
-
+        
         logging.info(f'Incoming signal from client {client}(source)')
         logging.debug(f'clientlist: {clients} checking if {client} is in list...')
         if client not in clients:
