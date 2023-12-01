@@ -1,8 +1,27 @@
 import threading
 import socket
 import logging
+import argparse
 
-logging.basicConfig(filename='client_log.log', level=logging.DEBUG)
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-cid', dest='cid', default=1, help='set client ID')
+parser.add_argument('-pt', dest='port', default=50000, help='set port of client')
+parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
+parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip')
+parser.add_argument('-servport', dest='serverport', default=130000, help='set server port')
+
+args = parser.parse_args()
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(lineno)d] %(asctime)s.%(msecs)03d %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    handlers=[
+        logging.FileHandler(filename=f'./src/logs/client{args.cid}_log.log'),
+        logging.StreamHandler()
+    ])
 
 sock_host = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 sock_server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
