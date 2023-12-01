@@ -20,6 +20,7 @@ logging.debug(f'hostname: {hostname}, hostip: {hostip}')
 sport = 8082
 dport = 8083
 
+#clients stores strings in form of "ip:port"
 clients = []
 
 # create and bind listening socket for clients to send to
@@ -27,6 +28,15 @@ sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 sock.bind((hostip, sport))
 
 logging.info(f'I\'m a signaling server')
+# call when the clients list is updated
+# send updated client list to all clients on the list
+def clients_update():
+    clist = ','.join(clients)
+    msg = f'{clist}'
+    for client in clients:
+        ip, port = client.split(':')
+
+        sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
 
 # listen for client connections
 # note: input is not fully sanitized
@@ -49,10 +59,9 @@ def listen():
         if client not in clients:
             logging.debug('Adding client to list..')
             clients.append(client)
+            clients_update()
         logging.info(f'Sending clientlist: {clients} response to {retaddr}')
-        clientlist = ','.join(clients)
-        msg = f'{clientlist}'
-        sock.sendto(bytes(msg, encoding='utf-8'), retaddr)
+        
         
 
 # create a listening thread
