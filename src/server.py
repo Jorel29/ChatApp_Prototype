@@ -40,32 +40,34 @@ def listen():
         except:
             logging.warning(f'Decode error from incoming message from a client')
             continue
-        
+        #store client addr
+        logging.info(f'Recieved ping from {retaddr}')
+        client = str(retaddr[0]) + ':' + str(retaddr[1])
         #Very basic sanitizing 
-        try:
-            clientip, serverip = data.split(':')
-        except:
-            logging.warning('Malformed message from client')
-            continue
-        logging.debug(f'Checking {serverip} != {hostip}')
-        if serverip != hostip:
-            logging.warning(f'{hostip} does not match dest: {serverip}')
-            continue
-        logging.debug(f'Checking {clientip} != {retaddr[0]}')
-        if clientip != retaddr[0]:
-            logging.warning(f'clientip ({clientip}) does not match retaddr ({retaddr})')
-            continue
+        # try:
+        #     clientip, serverip = data.split(':')
+        # except:
+        #     logging.warning('Malformed message from client')
+        #     continue
+        # logging.debug(f'Checking {serverip} != {hostip}')
+        # if serverip != hostip:
+        #     logging.warning(f'{hostip} does not match dest: {serverip}')
+        #     continue
+        # logging.debug(f'Checking {clientip} != {retaddr[0]}')
+        # if clientip != retaddr[0]:
+        #     logging.warning(f'clientip ({clientip}) does not match retaddr ({retaddr})')
+        #     continue
 
 
-        logging.info(f'Incoming signal from client {clientip}(source) to {serverip}(dest)')
-        logging.debug(f'clientlist: {clients} checking if {clientip} is in list...')
-        if clientip not in clients:
-            logging.debug('Adding clientip to list..')
-            clients.append(clientip)
-        logging.info(f'Sending clientlist: {clients} response to {clientip}')
-        clientlist = ':'.join(clients)
+        logging.info(f'Incoming signal from client {client}(source)')
+        logging.debug(f'clientlist: {clients} checking if {client} is in list...')
+        if client not in clients:
+            logging.debug('Adding client to list..')
+            clients.append(client)
+        logging.info(f'Sending clientlist: {clients} response to {retaddr}')
+        clientlist = ','.join(clients)
         msg = f'{clientlist}'
-        sock.sendto(bytes(msg, encoding='utf-8'), (clientip, dport))
+        sock.sendto(bytes(msg, encoding='utf-8'), retaddr)
         
 
 # create a listening thread

@@ -24,7 +24,7 @@ class BasicServerFunctions(unittest.TestCase):
 
     def test_basicsignal_ideal(self):
         logging.debug(f'test_basicsignal')
-        test_message_expected = '127.0.0.1'
+        test_message_expected = '127.0.0.1:8083'
 
         sock.sendto(SERVER_MSG, SERVER_ADDR)
         logging.debug(f'Waiting for server...')
@@ -37,7 +37,7 @@ class BasicServerFunctions(unittest.TestCase):
     #test tries to crash the server with malformed input
     def test_basicsignal_malformed(self):
         logging.debug(f'test_basicsignal_malformed')
-        expected = '127.0.0.1'
+        expected = '127.0.0.1:8083'
         #Send a malformed message, then a correct one
         sock.sendto(b'Hello Server!', SERVER_ADDR)
         logging.debug('Sending correctly formed message...')
@@ -53,7 +53,7 @@ class BasicServerFunctions(unittest.TestCase):
     #next two tests try to crash the server with malformed ips
     def test_basicsignal_badserverip(self):
         logging.debug('test_basicsignal_badserverip')
-        expected = '127.0.0.1'
+        expected = '127.0.0.1:8083'
         message = b'127.0.0.1:10.0.0.1'
 
         logging.debug('Sending improper ip message')
@@ -70,7 +70,7 @@ class BasicServerFunctions(unittest.TestCase):
 
     def test_basicsignal_badclientip(self):
         logging.debug('test_basicsignal_badip')
-        expected = '127.0.0.1'
+        expected = '127.0.0.1:8083'
         message = b'127.0.0.2:127.0.0.1'
 
         logging.debug('Sending improper ip message')
