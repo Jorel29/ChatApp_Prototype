@@ -41,6 +41,9 @@ sock_server.bind((hostip, serverport))
 #Client session
 logging.info(f'I\'m client: {hostip} listening on: {sport}')
 
+#List of addresses that client can connect to
+clients = []
+
 #recieve messages from the server
 def sock_listen():
     while True:
