@@ -27,13 +27,13 @@ sock_server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 hostname = socket.gethostname()
 # keep in mind these may change depending on needs
-hostip = socket.gethostbyname(hostname)
-peerip = None
-serverip = None
-sport = 8080
-dport = 8081
-serverport = 8082
+hostip = args.host
+serverip = args.serverip
+sport = args.port
+serverport = args.servport
 
+peerip = None
+dport = 8081
 #bind to the ports that the client will always listen on
 sock_host.bind((hostip, sport))
 sock_server.bind((hostip, serverport))
