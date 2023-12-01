@@ -20,7 +20,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d:%H:%M:%S',
     handlers=[
         logging.FileHandler(filename=f'./src/logs/client{args.cid}_log.log'),
-        logging.StreamHandler()
     ])
 
 sock_host = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
