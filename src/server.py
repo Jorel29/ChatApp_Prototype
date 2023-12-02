@@ -1,6 +1,16 @@
 import threading
 import socket
 import logging
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-pt', dest='port', default=50000, help='set port of client')
+parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
+parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip')
+parser.add_argument('-sp', dest='serverport', default=130000, help='set server port')
+
+args = parser.parse_args()
 
 logging.basicConfig(
     #filename='server_log.log', 
@@ -17,7 +27,7 @@ logging.basicConfig(
 hostname = socket.gethostname()
 hostip = '127.0.0.1'
 logging.debug(f'hostname: {hostname}, hostip: {hostip}')
-sport = 8082
+sport = args.serverport
 dport = 8083
 
 #clients stores strings in form of "ip:port"
