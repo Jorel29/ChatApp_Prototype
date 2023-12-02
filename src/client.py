@@ -9,7 +9,7 @@ parser.add_argument('-cid', dest='cid', default=1, help='set client ID')
 parser.add_argument('-pt', dest='port', default=50000, help='set port of client')
 parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
 parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip')
-parser.add_argument('-servport', dest='serverport', default=130000, help='set server port')
+parser.add_argument('-sp', dest='serverport', default=130000, help='set server port')
 
 args = parser.parse_args()
 
@@ -34,7 +34,7 @@ serverport = args.servport
 
 peerip = None
 dport = 8081
-peer = tuple()
+peer = None
 #bind to the ports that the client will always listen on
 sock_host.bind((hostip, sport))
 sock_server.bind((hostip, serverport))
@@ -59,7 +59,7 @@ def sock_listen():
             data = sock_server.recv(1024).decode(encoding='utf-8', errors='strict')
         except UnicodeDecodeError:
             logging.warning(f'Decode error from incoming message from server')
-        logging.info(f'\rlist recieved from {serverip}: {data} \n>')
+        logging.info(f'list recieved from {serverip}: {data} \n>')
 
         clist = data.split(',')
         convert_to_addrs(clist)
@@ -67,7 +67,7 @@ def sock_listen():
 sock_server_listener = threading.Thread(target=sock_listen, daemon=True)
 sock_server_listener.start()
 
-#tell server that the host is ready to recieve client list
+# Check into server that the host is ready to recieve client list
 sock_server.sendto(b'0', (serverip, serverport))
 
 def reply_isvalid(reply):
@@ -75,8 +75,16 @@ def reply_isvalid(reply):
         return False
     return ('Y' in reply) or ('y' in reply) or ('N' in reply) or ('n' in reply)
 
-    
+#link the host to peer to be able to send and recieve messages
+def link_peer(addr, reply):
+    logging.info(f'linking to peer : {addr}')
+    global peer
+    if 'Y' in reply or 'y' in reply:
+        peer = addr
 
+    sock_host.sendto(bytes(reply, encoding='utf-8'), peer)
+    
+# This thread is created after the clients dict length is > 1
 def conn_listen():
     global peer
     active_conn = False
@@ -105,14 +113,12 @@ def conn_listen():
             reply = input(f'Would you like to connect to peer {retaddr[0]}.{retaddr[1]}(Y/N)?')
         link_peer(retaddr, reply)
             
-#link the host to peer to be able to send and recieve messages
-def link_peer(addr, reply):
-    logging.info(f'linking to peer : {addr}')
-    global peer
-    if 'Y' in reply or 'y' in reply:
-        peer = addr
+# Create a connection listener thread
+sock_client_listener = threading.Thread(threading.Thread(target=conn_listen, daemon=True))
+sock_client_listener.start()
 
-    sock_host.sendto(bytes(reply, encoding='utf-8'), peer)
-
-
-
+# main thread 
+while True:
+    if peer != None:
+        msg = input('--> ')
+        sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
