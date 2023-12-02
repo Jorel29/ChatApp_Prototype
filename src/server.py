@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-pt', dest='port', default=50000, help='set port of client')
 parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
 parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip')
-parser.add_argument('-sp', dest='serverport', default=130000, help='set server port')
+parser.add_argument('-sp', dest='serverport', default=13000, help='set server port')
 
 args = parser.parse_args()
 
@@ -45,7 +45,7 @@ def clients_update():
     msg = f'{clist}'
     for client in clients:
         ip, port = client.split(':')
-
+        logging.info(f'sending updated {clist} to {client}')
         sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
 
 # listen for client connections
@@ -57,6 +57,9 @@ def listen():
             logging.info('Waiting for clients...')
             rawdata, retaddr = sock.recvfrom(1024)
             data = rawdata.decode(encoding='utf-8', errors='strict')
+            # used for rapid testing purposes, please remove after better solution is made
+            if 'clear' in data:
+                clients.clear()
         except:
             logging.warning(f'Decode error from incoming message from a client')
             continue

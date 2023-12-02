@@ -14,11 +14,11 @@ logging.basicConfig(
     )
 #Socket setup
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-sock.bind(('127.0.0.1', 8083))
+sock.bind(('127.0.0.1', 8080))
 client1:str = None
 
 sock2 = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-sock2.bind(('127.0.0.1', 8084))
+sock2.bind(('127.0.0.1', 8081))
 client2:str = None
 #Macros
 SERVER_ADDR = ('127.0.0.1', 8082)
@@ -26,6 +26,7 @@ SERVER_MSG = b'127.0.0.1:127.0.0.1'
 
 class BasicClientFunctions(unittest.TestCase):
 
+    # Check into server, get singluar client list
     def test_basicsignal_ideal(self):
         logging.debug(f'test_basicsignal')
         test_message_expected = '127.0.0.1:8083'

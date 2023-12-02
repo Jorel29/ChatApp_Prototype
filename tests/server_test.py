@@ -12,6 +12,8 @@ logging.basicConfig(
         
     ]
     )
+sock_reset = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
 #Socket setup
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 sock.bind(('127.0.0.1', 8083))
@@ -21,11 +23,14 @@ sock2 = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 sock2.bind(('127.0.0.1', 8084))
 client2:str = None
 #Macros
-SERVER_ADDR = ('127.0.0.1', 8082)
+SERVER_ADDR = ('127.0.0.1', 13000)
 SERVER_MSG = b'127.0.0.1:127.0.0.1'
 
 class BasicServerFunctions(unittest.TestCase):
 
+    def tearDown(self) -> None:
+        sock.sendto(b'clear', SERVER_ADDR)
+        return super().tearDown()
     def test_basicsignal_ideal(self):
         logging.debug(f'test_basicsignal')
         test_message_expected = '127.0.0.1:8083'
@@ -94,10 +99,10 @@ class BasicServerFunctions(unittest.TestCase):
         sock.sendto(b'0', SERVER_ADDR)
 
         sock2.sendto(b'0', SERVER_ADDR)
-        time.sleep(3)
+        
         data = sock.recv(1024).decode()
         data2 = sock2.recv(1024).decode()
-
+        
         self.assertIn('127.0.0.1:8083', data, msg=f'client not found in data: {data}')
         self.assertIn('127.0.0.1:8084', data, msg=f'client not found in data: {data}')
 

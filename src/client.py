@@ -9,7 +9,7 @@ parser.add_argument('-cid', dest='cid', default=1, help='set client ID')
 parser.add_argument('-pt', dest='port', default=50000, help='set port of client')
 parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
 parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip')
-parser.add_argument('-sp', dest='serverport', default=130000, help='set server port')
+parser.add_argument('-sp', dest='serverport', default=13000, help='set server port')
 
 args = parser.parse_args()
 
@@ -29,15 +29,15 @@ hostname = socket.gethostname()
 # keep in mind these may change depending on needs
 hostip = args.host
 serverip = args.serverip
-sport = args.port
-serverport = args.servport
+sport = int(args.port)
+serverport = int(args.serverport)
 
 peerip = None
 dport = 8081
 peer = None
 #bind to the ports that the client will always listen on
 sock_host.bind((hostip, sport))
-sock_server.bind((hostip, serverport))
+#sock_server.bind((serverip, serverport))
 
 #Client session
 logging.info(f'I\'m client: {hostip} listening on: {sport}')
@@ -56,10 +56,10 @@ def convert_to_addrs(list):
 def sock_listen():
     while True:
         try:
-            data = sock_server.recv(1024).decode(encoding='utf-8', errors='strict')
+            data = sock_host.recv(1024).decode(encoding='utf-8', errors='strict')
         except UnicodeDecodeError:
             logging.warning(f'Decode error from incoming message from server')
-        logging.info(f'list recieved from {serverip}: {data} \n>')
+        logging.info(f'list recieved from server: {data} \n>')
 
         clist = data.split(',')
         convert_to_addrs(clist)
@@ -68,7 +68,7 @@ sock_server_listener = threading.Thread(target=sock_listen, daemon=True)
 sock_server_listener.start()
 
 # Check into server that the host is ready to recieve client list
-sock_server.sendto(b'0', (serverip, serverport))
+sock_host.sendto(b'0', (serverip, serverport))
 
 def reply_isvalid(reply):
     if len(reply) > 1:
@@ -122,7 +122,7 @@ def conn_listen():
         link_peer(retaddr, reply)
             
 # Create a connection listener thread
-sock_client_listener = threading.Thread(threading.Thread(target=conn_listen, daemon=True))
+sock_client_listener = threading.Thread(target=conn_listen, daemon=True)
 sock_client_listener.start()
 
 # main thread 
