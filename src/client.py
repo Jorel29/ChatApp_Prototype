@@ -52,10 +52,13 @@ def convert_to_addrs(list):
         ip, port = string.split(':')
         
         clients[cid] = (ip, int(port))
+        cid += 1
+    logging.debug(f'updated clients dict: {clients}')
 #recieve messages from the server
 def sock_listen():
     while True:
         try:
+            logging.info('Waiting for server updates...')
             data = sock_host.recv(1024).decode(encoding='utf-8', errors='strict')
         except UnicodeDecodeError:
             logging.warning(f'Decode error from incoming message from server')
@@ -127,6 +130,7 @@ sock_client_listener.start()
 
 # main thread 
 while True:
+    continue
     if peer != None:
         msg = input('--> ')
         sock_host.sendto(bytes(msg, encoding='utf-8'), peer)

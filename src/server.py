@@ -2,6 +2,7 @@ import threading
 import socket
 import logging
 import argparse
+import time
 
 parser = argparse.ArgumentParser()
 
@@ -45,8 +46,12 @@ def clients_update():
     msg = f'{clist}'
     for client in clients:
         ip, port = client.split(':')
-        logging.info(f'sending updated {clist} to {client}')
-        sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
+        logging.info(f'sending updated {msg} to {ip}:{port}')
+        #temporarily send redundantly until TCP is set up 
+        sent = sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
+        sent = sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
+        
+        #logging.info(f'bytes sent: {sent}')
 
 # listen for client connections
 # note: input is not fully sanitized
@@ -73,7 +78,7 @@ def listen():
             logging.debug('Adding client to list..')
             clients.append(client)
             clients_update()
-        logging.info(f'Sending clientlist: {clients} response to {retaddr}')
+        #logging.info(f'Sending clientlist: {clients} response to {retaddr}')
         
         
 
