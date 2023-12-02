@@ -128,9 +128,23 @@ def conn_listen():
 sock_client_listener = threading.Thread(target=conn_listen, daemon=True)
 sock_client_listener.start()
 
+def print_peers():
+    for pid, peer in clients:
+        if hostip in peer and sport in peer: 
+            continue
+        else:
+            print(f'ID: {pid}, ADDR: {peer}')
+     
 # main thread 
 while True:
+
+    if(len(clients) > 1):
+        print(f'PEERS :')
+        print_peers()
+        cmd = input('Choose a peer ID:')
+        if int(cmd) > len(clients) or int(cmd) < 1:
+            print('INVALID INPUT, TRY AGAIN')
+            continue
+        
     continue
-    if peer != None:
-        msg = input('--> ')
-        sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
+    
