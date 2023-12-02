@@ -34,6 +34,7 @@ serverport = args.servport
 
 peerip = None
 dport = 8081
+peer = tuple()
 #bind to the ports that the client will always listen on
 sock_host.bind((hostip, sport))
 sock_server.bind((hostip, serverport))
@@ -41,9 +42,16 @@ sock_server.bind((hostip, serverport))
 #Client session
 logging.info(f'I\'m client: {hostip} listening on: {sport}')
 
-#List of addresses that client can connect to
-clients = []
+# dict of addresses that client can connect to
+# format: clientid: tuple(ip, port)
+clients = dict()
 
+def convert_to_addrs(list):
+    cid = 1
+    for string in list:
+        ip, port = string.split(':')
+        
+        clients[cid] = (ip, int(port))
 #recieve messages from the server
 def sock_listen():
     while True:
@@ -53,16 +61,58 @@ def sock_listen():
             logging.warning(f'Decode error from incoming message from server')
         logging.info(f'\rlist recieved from {serverip}: {data} \n>')
 
+        clist = data.split(',')
+        convert_to_addrs(clist)
+
 sock_server_listener = threading.Thread(target=sock_listen, daemon=True)
 sock_server_listener.start()
 
 #tell server that the host is ready to recieve client list
-sock_server.sendto(f'{hostip}:{serverip}', (serverip, serverport))
+sock_server.sendto(b'0', (serverip, serverport))
 
+def reply_isvalid(reply):
+    if len(reply) > 1:
+        return False
+    return ('Y' in reply) or ('y' in reply) or ('N' in reply) or ('n' in reply)
+
+    
+
+def conn_listen():
+    global peer
+    active_conn = False
+    while True:
+        try:
+            rawdata, retaddr = sock_host.recvfrom(1024)
+            data = rawdata.decode(encoding='utf-8', errors='strict')
+        except:
+            logging.warning('Error recieving data from sock_host')
+            continue
+        if retaddr not in clients.values():
+            continue
+        # if active connection, print out peer message data
+        if active_conn == True:
+            print(f'{peer[0]}.{peer[1]}:-> {data}')
+        # Wait for reply to accept incoming connection request
+        # Check if data is about accepting a peer request 
+        if 'y' in data or 'Y' in data:
+            active_conn = True
+            peer = retaddr
+
+        reply = input(f'Would you like to connect to peer {retaddr[0]}.{retaddr[1]}(Y/N)?')
+        
+        while(not reply_isvalid(reply)):
+            print('Reply must be 1 character Y or N')
+            reply = input(f'Would you like to connect to peer {retaddr[0]}.{retaddr[1]}(Y/N)?')
+        link_peer(retaddr, reply)
+            
 #link the host to peer to be able to send and recieve messages
-def link_peer(peer, dest):
-    logging.info(f'linking to peer : {peer} : {dest}')
-    sock_host.sendto(b'0', (peer, dest))
+def link_peer(addr, reply):
+    logging.info(f'linking to peer : {addr}')
+    global peer
+    if 'Y' in reply or 'y' in reply:
+        peer = addr
+
+    sock_host.sendto(bytes(reply, encoding='utf-8'), peer)
 
 
 
