@@ -95,17 +95,25 @@ def conn_listen():
         except:
             logging.warning('Error recieving data from sock_host')
             continue
+        # check if retaddr is actually from a valid client
         if retaddr not in clients.values():
             continue
         # if active connection, print out peer message data
         if active_conn == True:
             print(f'{peer[0]}.{peer[1]}:-> {data}')
-        # Wait for reply to accept incoming connection request
+            continue
+        
         # Check if data is about accepting a peer request 
         if 'y' in data or 'Y' in data:
             active_conn = True
             peer = retaddr
+            continue
 
+        if 'n' in data or 'N' in data:
+            active_conn = False
+            continue
+
+        # reply to accept incoming connection request
         reply = input(f'Would you like to connect to peer {retaddr[0]}.{retaddr[1]}(Y/N)?')
         
         while(not reply_isvalid(reply)):
