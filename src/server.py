@@ -29,63 +29,53 @@ hostname = socket.gethostname()
 hostip = '127.0.0.1'
 logging.debug(f'hostname: {hostname}, hostip: {hostip}')
 sport = args.serverport
-dport = 8083
+
 
 #clients stores strings in form of "ip:port"
 clients = []
+threads = []
+conns = []
+lock = threading.Lock()
 
 # create and bind listening socket for clients to send to
 sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 sock.bind((hostip, sport))
+sock.listen()
 
 logging.info(f'I\'m a signaling server')
 # call when the clients list is updated
 # send updated client list to all clients on the list
 def clients_update():
     clist = ','.join(clients)
-    msg = f'{clist}'
-    for client in clients:
-        ip, port = client.split(':')
-        logging.info(f'sending updated {msg} to {ip}:{port}')
-        #temporarily send redundantly until TCP is set up 
-        sent = sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
-        sent = sock.sendto(bytes(msg, encoding='utf-8'), (ip, int(port)))
-        
-        #logging.info(f'bytes sent: {sent}')
+    #conn is a socket object
+    for conn in conns:
+        try:
+            conn.send(bytes(clist, encoding='utf-8'))
+        except:
+            sock_str = socket.getnameinfo(conn.getsockname())
+            logging.warning(f'Error sending list to {sock_str}')
+    
 
 # listen for client connections
 # note: input is not fully sanitized
 # waits for <clientip>:<serverip> message format
-def listen():
+def listen(conn, addr):
     while True:
-        try:
-            logging.info('Waiting for clients...')
-            rawdata, retaddr = sock.recvfrom(1024)
-            data = rawdata.decode(encoding='utf-8', errors='strict')
-            # used for rapid testing purposes, please remove after better solution is made
-            if 'clear' in data:
-                clients.clear()
-        except:
-            logging.warning(f'Decode error from incoming message from a client')
-            continue
-        #store client addr
-        logging.info(f'Recieved ping from {retaddr}')
-        client = str(retaddr[0]) + ':' + str(retaddr[1])
-        
-        logging.info(f'Incoming signal from client {client}(source)')
-        logging.debug(f'clientlist: {clients} checking if {client} is in list...')
+        logging.info(f'Recieved ping from {addr}')
+        client = str(addr[0]) + ':' + str(addr[1])
         if client not in clients:
-            logging.debug('Adding client to list..')
-            clients.append(client)
+            logging.debug(f'Adding client {client} to list..')
+            with lock:
+                conns.append(conn)
+                clients.append(client)
             clients_update()
         #logging.info(f'Sending clientlist: {clients} response to {retaddr}')
-        
-        
 
-# create a listening thread
-listener = threading.Thread(target=listen, daemon=True)
-listener.start()
 
+# Main thread accepts connections
 while True:
-    continue
-
+    logging.info('Waiting for clients...')
+    conn, addr = sock.accept()
+    threads.append(threading.Thread(target=listen, args=(conn, addr), daemon=True))
+ 
+sock.close()
