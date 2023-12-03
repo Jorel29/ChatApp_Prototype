@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-pt', dest='port', default=50000, help='set port of client')
 parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
 parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip')
-parser.add_argument('-sp', dest='serverport', default=13000, help='set server port')
+parser.add_argument('-sp', dest='serverport', default=13400, help='set server port')
 
 args = parser.parse_args()
 
@@ -38,7 +38,7 @@ conns = []
 lock = threading.Lock()
 
 # create and bind listening socket for clients to send to
-sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 sock.bind((hostip, sport))
 sock.listen()
 
@@ -62,7 +62,17 @@ def clients_update():
 def listen(conn, addr):
     while True:
         logging.info(f'Recieved ping from {addr}')
-        client = str(addr[0]) + ':' + str(addr[1])
+        try:
+            data = conn.recv(1024).decode()
+        except TimeoutError or InterruptedError:
+            logging.warning('Connection error, closing connection')
+            break
+        except:
+            logging.warning('Reading data error, closing connection')
+            conn.close()
+            break
+        logging.info(f'UDP Port Recieved {data}')
+        client = str(addr[0]) + ':' + data
         if client not in clients:
             logging.debug(f'Adding client {client} to list..')
             with lock:
@@ -70,12 +80,15 @@ def listen(conn, addr):
                 clients.append(client)
             clients_update()
         #logging.info(f'Sending clientlist: {clients} response to {retaddr}')
+    #threading.current_thread().join()
 
 
 # Main thread accepts connections
 while True:
     logging.info('Waiting for clients...')
     conn, addr = sock.accept()
-    threads.append(threading.Thread(target=listen, args=(conn, addr), daemon=True))
+    thread = threading.Thread(target=listen, args=(conn, addr), daemon=True)
+    thread.start()
+    threads.append(thread)
  
 sock.close()
