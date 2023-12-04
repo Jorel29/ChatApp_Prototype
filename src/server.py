@@ -3,6 +3,7 @@ import socket
 import logging
 import argparse
 import time
+import queue
 
 parser = argparse.ArgumentParser()
 
@@ -59,7 +60,7 @@ def clients_update():
 # listen for client connections
 # note: input is not fully sanitized
 # waits for <clientip>:<serverip> message format
-def listen(conn, addr):
+def conn_accept(conn, addr):
     while True:
         logging.info(f'Recieved ping from {addr}')
         try:
@@ -80,15 +81,38 @@ def listen(conn, addr):
                 clients.append(client)
             clients_update()
         #logging.info(f'Sending clientlist: {clients} response to {retaddr}')
+        time.sleep(0.01)
     #threading.current_thread().join()
 
+def listen():
+    while True:
+        conn, addr = sock.accept()
+        thread = threading.Thread(target=conn_accept, args=(conn, addr), daemon=True)
+        thread.start()
+        threads.append(thread)
+        time.sleep(0.01)
 
+listen_thread = threading.Thread(target=listen, daemon=True)
+listen_thread.start()
+
+def keyboard_thread(inputQueue):
+    while True:
+        input_str = input('->')
+        inputQueue.put(input_str)
+
+
+inputQueue = queue.Queue()
+inputThread = threading.Thread(target=keyboard_thread, args=(inputQueue,), daemon=True)
+inputThread.start()
 # Main thread accepts connections
 while True:
-    logging.info('Waiting for clients...')
-    conn, addr = sock.accept()
-    thread = threading.Thread(target=listen, args=(conn, addr), daemon=True)
-    thread.start()
-    threads.append(thread)
- 
-sock.close()
+    
+    if inputQueue.qsize() > 0:
+        input_str = inputQueue.get()
+        if input_str == 'kill':
+            break
+    #logging.info('Waiting for clients...')
+    
+    time.sleep(0.01)
+print('Killing server...')
+    
