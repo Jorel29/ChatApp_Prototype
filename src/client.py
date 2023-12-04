@@ -2,6 +2,8 @@ import threading
 import socket
 import logging
 import argparse
+import queue
+import time
 
 parser = argparse.ArgumentParser()
 
@@ -23,7 +25,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d:%H:%M:%S',
     handlers=[
         logging.FileHandler(filename=f'./src/logs/client{args.cid}_log.log'),
-        logging.StreamHandler()
     ])
 
 
@@ -57,6 +58,7 @@ logging.info(f'I\'m client: {hostip} listening on: {sport}')
 # format: clientid: tuple(ip, port)
 clients = dict()
 
+active_conn = False
 
 # Check into server that the host is ready to recieve client list
 
@@ -77,6 +79,8 @@ def sock_listen():
             data = sock_server.recv(1024).decode(encoding='utf-8', errors='strict')
         except UnicodeDecodeError:
             logging.warning(f'Decode error from incoming message from server')
+        except ConnectionError:
+            logging.warning('Lost Connection to server')
         logging.info(f'list recieved from server: {data} \n>')
 
         clist = data.split(',')
@@ -106,9 +110,10 @@ def link_peer(addr, reply):
 # This thread is created after the clients dict length is > 1
 def conn_listen():
     global peer
-    active_conn = False
+    global active_conn
     while True:
         try:
+            logging.info('Ready to recieve messages')
             rawdata, retaddr = sock_host.recvfrom(1024)
             data = rawdata.decode(encoding='utf-8', errors='strict')
         except:
@@ -118,27 +123,12 @@ def conn_listen():
         if retaddr not in clients.values():
             continue
         # if active connection, print out peer message data
-        if active_conn == True:
-            print(f'{peer[0]}.{peer[1]}:-> {data}')
-            continue
         
-        # Check if data is about accepting a peer request 
-        if 'y' in data or 'Y' in data:
-            active_conn = True
-            peer = retaddr
-            continue
-
-        if 'n' in data or 'N' in data:
-            active_conn = False
-            continue
-
-        # reply to accept incoming connection request
-        reply = input(f'Would you like to connect to peer {retaddr[0]}.{retaddr[1]}(Y/N)?')
+        print(f'\r{retaddr[0]}.{retaddr[1]}:-> {data}')
+            
         
-        while(not reply_isvalid(reply)):
-            print('Reply must be 1 character Y or N')
-            reply = input(f'Would you like to connect to peer {retaddr[0]}.{retaddr[1]}(Y/N)?')
-        link_peer(retaddr, reply)
+        time.sleep(0.01)
+        
             
 # Create a connection listener thread
 sock_client_listener = threading.Thread(target=conn_listen, daemon=True)
@@ -150,17 +140,44 @@ def print_peers():
             continue
         else:
             print(f'ID: {pid}, ADDR: {peer}')
-     
+
+inputQueue = queue.Queue()
+
+def keyboard_thread(inputQueue):
+    while True:
+        input_str = input()
+        inputQueue.put(input_str)
+
+key_input = threading.Thread(target=keyboard_thread, args=(inputQueue,), daemon=True)
+key_input.start()
 # main thread 
 while True:
+    if inputQueue.qsize() > 0:
+        input_str = inputQueue.get()
+        if input_str == 'exit':
+            break
 
-    if(len(clients) > 1):
-        print(f'PEERS :')
+    if len(clients) > 1:
+        print('SELECT A PEER:')
         print_peers()
-        cmd = input('Choose a peer ID:')
-        if int(cmd) > len(clients) or int(cmd) < 1 or args.cid in cmd:
-            print('INVALID INPUT, TRY AGAIN')
+        try:
+            input_str = inputQueue.get()
+            peerid = int(input_str) 
+        except:
+            print(f'Invalid input: {input_str}')
             continue
+        print('Send a message:')
+        peer = clients[peerid]
+
+        try:
+            msg = inputQueue.get()
+            sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
+        except:
+            print('Error sending message')
+
         
-    continue
+        
+
+    time.sleep(0.01)
+print('Killing client...')    
     
