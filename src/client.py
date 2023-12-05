@@ -59,12 +59,19 @@ logging.info(f'I\'m client: {hostip} listening on: {sport}')
 clients = dict()
 
 active_conn = False
-
+cid = 1
 # Check into server that the host is ready to recieve client list
-
+def removeaddr(addr):
+    ip, port = addr.split(':')
+    keytoremove = None
+    for key, value in clients.items():
+        if value[0]==ip and value[1] == int(port):
+            keytoremove = key
+    clients.pop(keytoremove)
+    logging.debug(f'deleted {addr}')
 
 def convert_to_addrs(list):
-    cid = 1
+    global cid
     for string in list:
         ip, port = string.split(':')
         
@@ -82,7 +89,10 @@ def sock_listen():
         except ConnectionError:
             logging.warning('Lost Connection to server')
         logging.info(f'list recieved from server: {data} \n>')
-
+        if 'R' in data:
+            temp = data.split(' ')
+            removeaddr(temp[1])
+            continue
         clist = data.split(',')
         convert_to_addrs(clist)
 
@@ -152,10 +162,10 @@ key_input = threading.Thread(target=keyboard_thread, args=(inputQueue,), daemon=
 key_input.start()
 # main thread 
 while True:
-    if inputQueue.qsize() > 0:
-        input_str = inputQueue.get()
-        if input_str == 'exit':
-            break
+    
+    input_str = inputQueue.get()
+    if input_str == 'exit':
+        break
 
     if len(clients) > 1:
         print('SELECT A PEER:')
@@ -164,7 +174,7 @@ while True:
             input_str = inputQueue.get()
             peerid = int(input_str) 
         except:
-            print(f'Invalid input: {input_str}')
+            print(f'Invalid input {input_str}')
             continue
         print('Send a message:')
         peer = clients[peerid]

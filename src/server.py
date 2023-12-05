@@ -46,6 +46,15 @@ sock.listen()
 logging.info(f'I\'m a signaling server')
 # call when the clients list is updated
 # send updated client list to all clients on the list
+def clients_remove(addr_str):
+    msg = f'R {addr_str}'
+    for conn in conns:
+        try:
+            conn.send(bytes(msg, encoding='utf-8'))
+        except:
+            sock_str = socket.getnameinfo(conn.getsockname())
+            logging.warning(f'Error sending list to {sock_str}')
+
 def clients_update():
     clist = ','.join(clients)
     #conn is a socket object
@@ -56,7 +65,7 @@ def clients_update():
             sock_str = socket.getnameinfo(conn.getsockname())
             logging.warning(f'Error sending list to {sock_str}')
     
-
+ids = dict()
 # listen for client connections
 # note: input is not fully sanitized
 # waits for <clientip>:<serverip> message format
@@ -65,18 +74,22 @@ def conn_accept(conn, addr):
         logging.info(f'Recieved ping from {addr}')
         try:
             data = conn.recv(1024).decode()
-        except TimeoutError or InterruptedError:
-            logging.warning('Connection error, closing connection')
-            break
         except:
             logging.warning('Reading data error, closing connection')
             conn.close()
+            with lock:
+                conns.remove(conn)
+                toberemoved = ids.pop(addr, None)
+                if toberemoved != None:
+                    clients.remove(toberemoved)
+            clients_remove(toberemoved)
             break
         logging.info(f'UDP Port Recieved {data}')
         client = str(addr[0]) + ':' + data
         if client not in clients:
             logging.debug(f'Adding client {client} to list..')
             with lock:
+                ids[addr] = str(client)
                 conns.append(conn)
                 clients.append(client)
             clients_update()
@@ -97,7 +110,7 @@ listen_thread.start()
 
 def keyboard_thread(inputQueue):
     while True:
-        input_str = input('->')
+        input_str = input()
         inputQueue.put(input_str)
 
 
