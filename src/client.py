@@ -14,9 +14,9 @@ parser.add_argument('-pt', dest='port', default=50000, help='set port of client'
 parser.add_argument('-ip', dest='host', default='127.0.0.1', help='set host ip')
 # need to rename these
 parser.add_argument('-sip', dest='serverip', default='127.0.0.1', help='set server ip to listen on')
-parser.add_argument('-sp', dest='serverport', default=13000, help='set server port')
+parser.add_argument('-sp', dest='serverport', default=13000, help='set server port that client will recieve data')
 parser.add_argument('-ssip', dest='sigserverip', default='127.0.0.1', help='set ip of signal server')
-parser.add_argument('-ssp', dest='sigport', default=13400, help='set port of signal server')
+parser.add_argument('-ssp', dest='sigport', default=13400, help='set port of signal server to recieve data')
 
 args = parser.parse_args()
 
@@ -35,6 +35,8 @@ text_area = QPlainTextEdit()
 text_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 message = QLineEdit()
 layout = QVBoxLayout()
+peers = QComboBox()
+layout.addWidget(peers)
 layout.addWidget(text_area)
 layout.addWidget(message)
 window = QWidget()
@@ -47,6 +49,7 @@ hostname = socket.gethostname()
 hostip = args.host
 serverip = args.serverip
 sport = int(args.port)
+host_addr = (hostip, sport)
 serverport = int(args.serverport)
 #address of server
 sigip = args.sigserverip
@@ -75,10 +78,12 @@ cid = 1
 # Check into server that the host is ready to recieve client list
 def removeaddr(addr):
     ip, port = addr.split(':')
+    index = peers.findText(addr)
+    peers.removeItem(index)
     keytoremove = None
     for key, value in clients.items():
         if value[0]==ip and value[1] == int(port):
-            keytoremove = key
+            keytoremove = key 
     clients.pop(keytoremove)
     logging.debug(f'deleted {addr}')
 
@@ -86,8 +91,10 @@ def convert_to_addrs(list):
     global cid
     for string in list:
         ip, port = string.split(':')
-        
-        clients[cid] = (ip, int(port))
+        addr = (ip, int(port))
+        clients[cid] = addr
+        if host_addr != addr:
+            peers.addItem(string, addr)
         cid += 1
     logging.debug(f'updated clients dict: {clients}')
 #recieve messages from the server
@@ -157,52 +164,23 @@ def conn_listen():
 sock_client_listener = threading.Thread(target=conn_listen, daemon=True)
 sock_client_listener.start()
 
-def print_peers():
-    for pid, peer in clients.items():
-        if hostip in peer and sport in peer: 
-            continue
-        else:
-            print(f'ID: {pid}, ADDR: {peer}')
 
-inputQueue = queue.Queue()
 
-def keyboard_thread(inputQueue):
-    while True:
-        try:
-            input_str = input()
-        except:
-            break
-        inputQueue.put(input_str)
+def select_peer():
+    #select a peer
+    global peer
+    peer = peers.currentData()
+    logging.info(f'Current Peer: {peer}')
 
-key_input = threading.Thread(target=keyboard_thread, args=(inputQueue,), daemon=True)
-key_input.start()
-# input thread 
-def message_thread():
-    while True:
+def send_message():
+    #send out a typed message to selected peer
+    msg = message.text()
+    logging.info(f'Sending Message to {peer}: {message}')
+    sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
+    message.clear()
 
-        if len(clients) > 1:
-            print('SELECT A PEER:')
-            print_peers()
-            try:
-                input_str = inputQueue.get()
-                peerid = int(input_str) 
-            except:
-                print(f'Invalid input {input_str}')
-                continue
-            print('Send a message:')
-            peer = clients[peerid]
-
-            try:
-                msg = inputQueue.get()
-                sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
-            except:
-                print('Error sending message')
-
-        time.sleep(0.01)
-
-thread_input = threading.Thread(target=message_thread, daemon=True)
-thread_input.start()
-
+peers.currentIndexChanged.connect(select_peer)
+message.returnPressed.connect(send_message)
 app.exec()
 
 print('Killing client...')    
