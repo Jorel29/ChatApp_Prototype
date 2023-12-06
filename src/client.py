@@ -4,6 +4,8 @@ import logging
 import argparse
 import queue
 import time
+from PyQt6.QtCore import *
+from PyQt6.QtWidgets import *
 
 parser = argparse.ArgumentParser()
 
@@ -27,7 +29,17 @@ logging.basicConfig(
         logging.FileHandler(filename=f'./src/logs/client{args.cid}_log.log'),
     ])
 
-
+#GUI
+app = QApplication([])
+text_area = QPlainTextEdit()
+text_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+message = QLineEdit()
+layout = QVBoxLayout()
+layout.addWidget(text_area)
+layout.addWidget(message)
+window = QWidget()
+window.setLayout(layout)
+window.show()
 
 
 hostname = socket.gethostname()
@@ -135,7 +147,8 @@ def conn_listen():
         # if active connection, print out peer message data
         
         print(f'\r{retaddr[0]}.{retaddr[1]}:-> {data}')
-            
+        incoming_msg = f'{retaddr[0]}.{retaddr[1]}:-> {data}'
+        text_area.appendPlainText(incoming_msg)
         
         time.sleep(0.01)
         
@@ -155,39 +168,42 @@ inputQueue = queue.Queue()
 
 def keyboard_thread(inputQueue):
     while True:
-        input_str = input()
+        try:
+            input_str = input()
+        except:
+            break
         inputQueue.put(input_str)
 
 key_input = threading.Thread(target=keyboard_thread, args=(inputQueue,), daemon=True)
 key_input.start()
-# main thread 
-while True:
-    
-    input_str = inputQueue.get()
-    if input_str == 'exit':
-        break
+# input thread 
+def message_thread():
+    while True:
 
-    if len(clients) > 1:
-        print('SELECT A PEER:')
-        print_peers()
-        try:
-            input_str = inputQueue.get()
-            peerid = int(input_str) 
-        except:
-            print(f'Invalid input {input_str}')
-            continue
-        print('Send a message:')
-        peer = clients[peerid]
+        if len(clients) > 1:
+            print('SELECT A PEER:')
+            print_peers()
+            try:
+                input_str = inputQueue.get()
+                peerid = int(input_str) 
+            except:
+                print(f'Invalid input {input_str}')
+                continue
+            print('Send a message:')
+            peer = clients[peerid]
 
-        try:
-            msg = inputQueue.get()
-            sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
-        except:
-            print('Error sending message')
+            try:
+                msg = inputQueue.get()
+                sock_host.sendto(bytes(msg, encoding='utf-8'), peer)
+            except:
+                print('Error sending message')
 
-        
-        
+        time.sleep(0.01)
 
-    time.sleep(0.01)
+thread_input = threading.Thread(target=message_thread, daemon=True)
+thread_input.start()
+
+app.exec()
+
 print('Killing client...')    
     
